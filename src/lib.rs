@@ -9,18 +9,24 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
+    pub fn build(
+        mut args: impl Iterator<Item = String>,
+    ) -> Result<Config, &'static str> {
+        args.next();
 
-        let query = args[1].clone();
-        let file_path = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
 
-        let ignore_case = if args.len() > 3 {
-            args[3].eq("-i")
-        } else {
-            env::var("IGNORE_CASE").is_ok()
+        let file_path = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path")
+        };
+
+        let ignore_case = match args.next() {
+            Some(arg) => arg.eq("-i"),
+            None => env::var("IGNORE_CASE").is_ok()
         };
 
         Ok(Config {
@@ -48,15 +54,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(
@@ -64,15 +65,11 @@ pub fn search_case_insensitive<'a>(
     contents: &'a str,
 ) -> Vec<&'a str> {
     let query = query.to_lowercase();
-    let mut results = Vec::new();
 
-    for line in contents.lines() {
-        if line.to_lowercase().contains(&query) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&query))
+        .collect()
 }
 
 #[cfg(test)]
@@ -109,13 +106,13 @@ Trust me.";
     #[test]
     fn ignore_case_argument_on() {
         let args = vec![
-            "minigrep".to_string(),
-            "text".to_string(),
-            "file.txt".to_string(),
-            "-i".to_string(),
-        ];
+            "minigrep".to_owned(),
+            "text".to_owned(),
+            "file.txt".to_owned(),
+            "-i".to_owned(),
+        ].into_iter();
 
-        let config = Config::build(&args).unwrap();
+        let config = Config::build(args).unwrap();
 
         assert_eq!(
             true,
@@ -126,12 +123,12 @@ Trust me.";
     #[test]
     fn ignore_case_argument_off() {
         let args = vec![
-            "minigrep".to_string(),
-            "text".to_string(),
-            "file.txt".to_string(),
-        ];
+            "minigrep".to_owned(),
+            "text".to_owned(),
+            "file.txt".to_owned(),
+        ].into_iter();
 
-        let config = Config::build(&args).unwrap();
+        let config = Config::build(args).unwrap();
 
         assert_eq!(
             false,
@@ -144,12 +141,12 @@ Trust me.";
         env::set_var("IGNORE_CASE", "1");
 
         let args = vec![
-            "minigrep".to_string(),
-            "text".to_string(),
-            "file.txt".to_string(),
-        ];
+            "minigrep".to_owned(),
+            "text".to_owned(),
+            "file.txt".to_owned(),
+        ].into_iter();
 
-        let config = Config::build(&args).unwrap();
+        let config = Config::build(args).unwrap();
 
         assert_eq!(
             true,
