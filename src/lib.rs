@@ -17,7 +17,11 @@ impl Config {
         let query = args[1].clone();
         let file_path = args[2].clone();
 
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
+        let ignore_case = if args.len() > 3 {
+            args[3].eq("-i")
+        } else {
+            env::var("IGNORE_CASE").is_ok()
+        };
 
         Ok(Config {
             query,
@@ -99,6 +103,57 @@ Trust me.";
         assert_eq!(
             vec!["Rust:", "Trust me."],
             search_case_insensitive(query, contents)
+        );
+    }
+
+    #[test]
+    fn ignore_case_argument_on() {
+        let args = vec![
+            "minigrep".to_string(),
+            "text".to_string(),
+            "file.txt".to_string(),
+            "-i".to_string(),
+        ];
+
+        let config = Config::build(&args).unwrap();
+
+        assert_eq!(
+            true,
+            config.ignore_case,
+        );
+    }
+
+    #[test]
+    fn ignore_case_argument_off() {
+        let args = vec![
+            "minigrep".to_string(),
+            "text".to_string(),
+            "file.txt".to_string(),
+        ];
+
+        let config = Config::build(&args).unwrap();
+
+        assert_eq!(
+            false,
+            config.ignore_case,
+        );
+    }
+
+    #[test]
+    fn ignore_case_env_var_on() {
+        env::set_var("IGNORE_CASE", "1");
+
+        let args = vec![
+            "minigrep".to_string(),
+            "text".to_string(),
+            "file.txt".to_string(),
+        ];
+
+        let config = Config::build(&args).unwrap();
+
+        assert_eq!(
+            true,
+            config.ignore_case,
         );
     }
 }
