@@ -7,17 +7,32 @@ and prints those lines.
 
 ## Usage
 To run minigrep, execute the binary with the search string and the file to search:
-```bash
-$ ./minigrep text file.txt
+```sh
+$ minigrep text file.txt
+```
+
+```sh
+Usage: minigrep <search> <file> [options]
+
+Commands:
+  minigrep text [file]             Search a file for matching lines which include text.
+
+Options:
+  -i, IGNORE_CASE                  Enable case-insensitive searching.                        [boolean]
+
+Examples:
+  minigrep text file.txt
+  minigrep text file.txt -i
+  IGNORE_CASE=1 minigrep text file.txt
 ```
 
 ## Build
-```bash
+```sh
 $ cargo build
 ```
 
 ## Test
-```bash
+```sh
 $ cargo test
 ```
 
